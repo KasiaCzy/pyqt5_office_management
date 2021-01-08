@@ -34,9 +34,11 @@ class AddEventWindow(QWidget):
         # bottom layout widgets
         self.events_box = QComboBox()
         self.events_box.addItems(['--Select--', 'holiday', 'work day'])
+
         self.note_entry = QTextEdit()
         self.note_entry.setMaximumHeight(50)
         self.note_entry.setPlaceholderText("Enter useful information")
+
         self.submit_btn = QPushButton("Submit")
         self.submit_btn.setStyleSheet(style.btn_style())
         self.submit_btn.clicked.connect(self.add_event)
@@ -45,6 +47,8 @@ class AddEventWindow(QWidget):
         self.main_layout = QVBoxLayout()
         self.top_layout = QVBoxLayout()
         self.bottom_layout = QFormLayout()
+
+        # frames
         self.top_frame = QFrame()
         self.top_frame.setStyleSheet(style.window_top_frame())
         self.bottom_frame = QFrame()
@@ -69,15 +73,17 @@ class AddEventWindow(QWidget):
     def add_event(self):
         name = self.events_box.currentText()
         note = self.note_entry.toPlainText()
-        if name != '--Select--':
+        if self.events_box.currentIndex() != 0:
             try:
-                query = "INSERT INTO 'events' (name,date,note,user_id) VALUES (?,?,?,?)"
-                self.cursor.execute(query, (name, self.date, note, self.logged_user_id))
-                self.connection.commit()
-                QMessageBox.information(self, "Success", "Event has been added.")
+                self.insert_event(name, note)
                 self.event_added.emit()
                 self.close()
             except:
                 QMessageBox.information(self, "Warning", "Event has not been added.")
         else:
             QMessageBox.information(self, "Warning", 'Field: "Event" can not be empty.')
+
+    def insert_event(self, name, note):
+        query = "INSERT INTO 'events' (name,date,note,user_id) VALUES (?,?,?,?)"
+        self.cursor.execute(query, (name, self.date, note, self.logged_user_id))
+        self.connection.commit()

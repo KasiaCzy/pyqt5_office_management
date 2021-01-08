@@ -2,9 +2,11 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import style
+from dataEnum import *
 
 
 class DeleteUserWindow(QWidget):
+    user_deleted = pyqtSignal(int)
 
     def __init__(self, connection, cursor, logged_user_id):
         super().__init__()
@@ -31,33 +33,36 @@ class DeleteUserWindow(QWidget):
         self.users_selecte_box = QComboBox()
         self.users_selecte_box.setFont(QFont('', 10))
         self.users_selecte_box.addItem("--Select--")
-        query_user = "SELECT id,name FROM users"
-        users = self.cursor.execute(query_user).fetchall()
-
-        for user in users:
-            self.users_selecte_box.addItem(user[1], user[0])
+        for user in self.get_users():
+            self.users_selecte_box.addItem(user[UserData.NAME], user[UserData.ID])
+        self.users_selecte_box.model().sort(0)
 
         self.submit_btn = QPushButton("Delete")
         self.submit_btn.setStyleSheet(style.delete_btn_style())
         self.submit_btn.clicked.connect(self.delete_user)
-        user_query = self.cursor.execute(f"SELECT name FROM users WHERE id={self.logged_user_id}").fetchone()
-        user_name = user_query[0]
-        if user_name != 'admin':
+
+        self.user_name = self.get_user_by_id()
+        if self.user_name != 'admin' or self.users_selecte_box.currentIndex() == 0:
             self.submit_btn.setEnabled(False)
+        self.users_selecte_box.currentIndexChanged.connect(self.set_button_availability)
 
     def create_layouts(self):
         self.main_layout = QVBoxLayout()
         self.top_layout = QHBoxLayout()
         self.bottom_layout = QFormLayout()
+
+        # frames
         self.top_frame = QFrame()
         self.top_frame.setStyleSheet(style.window_top_frame())
         self.bottom_frame = QFrame()
         self.bottom_frame.setStyleSheet(style.window_bottom_frame())
+
         # adding widgets to layouts
         # top layout
         self.top_layout.addWidget(self.img)
         self.top_layout.addWidget(self.title)
         self.top_frame.setLayout(self.top_layout)
+
         # bottom layout
         self.bottom_layout.addRow(QLabel("Select User: "), self.users_selecte_box)
         self.bottom_layout.addRow("", self.submit_btn)
@@ -75,23 +80,50 @@ class DeleteUserWindow(QWidget):
 
         if mbox == QMessageBox.Yes:
             user_id = self.users_selecte_box.currentData()
+            user_index = self.users_selecte_box.currentIndex()
             if self.users_selecte_box.currentText() != 'admin':
                 try:
-                    query_user = "DELETE FROM users WHERE id=?"
-                    self.cursor.execute(query_user, (user_id,))
-                    self.connection.commit()
-                    query_events = "DELETE FROM events WHERE user_id=?"
-                    self.cursor.execute(query_events, (user_id,))
-                    self.connection.commit()
-                    query_entries = "DELETE FROM entries WHERE user_id=?"
-                    self.cursor.execute(query_entries, (user_id,))
-                    self.connection.commit()
-                    query_task = "DELETE FROM tasks WHERE user_id=?"
-                    self.cursor.execute(query_task, (user_id,))
-                    self.connection.commit()
+                    self.delete_users(user_id)
+                    self.delete_events(user_id)
+                    self.delete_entries(user_id)
+                    self.delete_tasks(user_id)
                     QMessageBox.information(self, "Information", "User has been deleted")
+                    self.user_deleted.emit(user_index)
                     self.close()
                 except:
                     QMessageBox.information(self, "Warning", "User has not been deleted")
             else:
                 QMessageBox.information(self, "Information", "User 'Admin' can not been deleted")
+
+    def set_button_availability(self):
+        if self.user_name == 'admin' and self.users_selecte_box.currentIndex() != 0:
+            self.submit_btn.setEnabled(True)
+        else:
+            self.submit_btn.setEnabled(False)
+
+    def get_users(self):
+        return self.cursor.execute("SELECT * FROM users").fetchall()
+
+    def get_user_by_id(self):
+        user_query = self.cursor.execute(f"SELECT * FROM users WHERE id={self.logged_user_id}").fetchone()
+        return user_query[UserData.NAME]
+
+    def delete_users(self, user_id):
+        query_user = "DELETE FROM users WHERE id=?"
+        self.cursor.execute(query_user, (user_id,))
+        self.connection.commit()
+
+    def delete_events(self, user_id):
+        query_event = "DELETE FROM events WHERE id=?"
+        self.cursor.execute(query_event, (user_id,))
+        self.connection.commit()
+
+    def delete_entries(self, user_id):
+        query_entrie = "DELETE FROM entries WHERE user_id=?"
+        self.cursor.execute(query_entrie, (user_id,))
+        self.connection.commit()
+
+    def delete_tasks(self, user_id):
+        query_task = "DELETE FROM tasks WHERE user_id=?"
+        self.cursor.execute(query_task, (user_id,))
+        self.connection.commit()

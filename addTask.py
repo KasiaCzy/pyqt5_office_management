@@ -2,10 +2,11 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import style
+from dataEnum import UserData
 
 
 class AddTaskWindow(QWidget):
-    confirm_task = pyqtSignal()
+    task_confirmed = pyqtSignal()
 
     def __init__(self, connection, cursor):
         super().__init__()
@@ -34,19 +35,18 @@ class AddTaskWindow(QWidget):
         self.name_entry = QLineEdit()
         self.name_entry.setFont(QFont('', 10))
         self.name_entry.setPlaceholderText("Enter task name")
+
         self.user_box = QComboBox()
         self.user_box.addItem("--Select--")
+        for user in self.get_users():
+            self.user_box.addItem(user[UserData.NAME], user[UserData.ID])
+
         self.status_box = QComboBox()
         self.status_box.addItems(['--Select--', 'to do', 'in progress', 'done', 'closed'])
+
         self.submit_btn = QPushButton("Submit")
         self.submit_btn.setStyleSheet(style.btn_style())
         self.submit_btn.clicked.connect(self.submit_task)
-
-        query_user = "SELECT id,name FROM users"
-        users = self.cursor.execute(query_user).fetchall()
-
-        for user in users:
-            self.user_box.addItem(user[1], user[0])
 
     def create_layouts(self):
         self.main_layout = QVBoxLayout()
@@ -79,11 +79,14 @@ class AddTaskWindow(QWidget):
         self.user_id = self.user_box.currentData()
         self.user_name = self.user_box.currentText()
         self.status = self.status_box.currentText()
-        if self.user_name == '--Select--' or self.status == '--Select--' or not self.name:
+        if self.user_box.currentIndex() == 0 or self.status_box.currentIndex() == 0 or not self.name:
             QMessageBox.information(self, "Warning", 'Enter all fields')
         else:
-            self.confirm_task.emit()
+            self.task_confirmed.emit()
             self.close()
+
+    def get_users(self):
+        return self.cursor.execute("SELECT * FROM users").fetchall()
 
 
 class ConfirmWindow(QWidget):
@@ -118,10 +121,13 @@ class ConfirmWindow(QWidget):
         # bottom layout widgets
         self.name_label = QLabel()
         self.name_label.setText(self.confirm_name)
+
         self.user_label = QLabel()
         self.user_label.setText(self.confirm_user_name)
+
         self.status_label = QLabel()
         self.status_label.setText(self.confirm_status)
+
         self.confirm_btn = QPushButton("Confirm")
         self.confirm_btn.setStyleSheet(style.btn_style())
         self.confirm_btn.clicked.connect(self.confirm_task)
@@ -131,7 +137,9 @@ class ConfirmWindow(QWidget):
         self.top_layout = QVBoxLayout()
         self.bottom_layout = QFormLayout()
         self.top_frame = QFrame()
+        self.top_frame.setStyleSheet(style.window_top_frame())
         self.bottom_frame = QFrame()
+        self.bottom_frame.setStyleSheet(style.window_bottom_frame())
 
         # top layout
         self.top_layout.addWidget(self.text)
@@ -151,15 +159,14 @@ class ConfirmWindow(QWidget):
         self.setLayout(self.main_layout)
 
     def confirm_task(self):
-        if self.confirm_name:
-            try:
-                query = "INSERT INTO 'tasks' (name,status,user_id) VALUES (?,?,?)"
-                self.cursor.execute(query, (self.confirm_name, self.confirm_status, self.confirm_user_id))
-                self.connection.commit()
-                QMessageBox.information(self, "Success", "Task has been added.")
-                self.task_added.emit()
-                self.close()
-            except:
-                QMessageBox.information(self, "Warning", "Task has not been added.")
-        else:
-            QMessageBox.information(self, "Warning", 'Fields: "Name" can not be empty.')
+        try:
+            self.insert_task()
+            self.task_added.emit()
+            self.close()
+        except:
+            QMessageBox.information(self, "Warning", "Task has not been added.")
+
+    def insert_task(self):
+        query = "INSERT INTO 'tasks' (name,status,user_id) VALUES (?,?,?)"
+        self.cursor.execute(query, (self.confirm_name, self.confirm_status, self.confirm_user_id))
+        self.connection.commit()

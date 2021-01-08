@@ -7,7 +7,6 @@ import style
 
 class RegisterWindow(QDialog):
     login_successful = pyqtSignal()
-    active_user = pyqtSignal(str)
 
     def __init__(self, connection, cursor):
         super().__init__()
@@ -15,6 +14,7 @@ class RegisterWindow(QDialog):
         self.cursor = cursor
         self.setWindowTitle("New User")
         self.setWindowIcon(QIcon("icons/addUser.png"))
+        self.setWindowFlags(self.windowFlags() & (~Qt.WindowContextHelpButtonHint))
         self.setGeometry(550, 150, 300, 200)
         self.setFixedSize(self.size())
         self.show()
@@ -31,6 +31,7 @@ class RegisterWindow(QDialog):
         self.confirm_password_entry = QLineEdit()
         self.confirm_password_entry.setEchoMode(QLineEdit.Password)
 
+        # buttons
         self.submit_btn = QPushButton('Submit')
         self.submit_btn.setStyleSheet(style.btn_style())
         self.submit_btn.clicked.connect(self.add_user)
@@ -52,20 +53,25 @@ class RegisterWindow(QDialog):
 
         hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
 
-        query_user = "SELECT name FROM users"
-        users = self.cursor.execute(query_user).fetchall()
+        users = self.get_users_name()
 
-        if username in users:
+        if any(username in user for user in users):
             QMessageBox.information(self, "Warning", 'User name has to be unique.')
         else:
-            if username and password == cpassword:
+            if username and password and password == cpassword:
                 try:
-                    query = "INSERT INTO users (name,password) VALUES(?,?)"
-                    self.cursor.execute(query, (username, hashed))
-                    self.connection.commit()
+                    self.insert_user(username, hashed)
                     QMessageBox.information(self, "Success", "User has been added.")
                     self.close()
                 except:
                     QMessageBox.information(self, "Warning", "User has not been added.")
             else:
                 QMessageBox.information(self, "Warning", 'Invalid data.')
+
+    def get_users_name(self):
+        return self.cursor.execute("SELECT name FROM users").fetchall()
+
+    def insert_user(self, user_name, password):
+        query = "INSERT INTO users (name,password) VALUES(?,?)"
+        self.cursor.execute(query, (user_name, password))
+        self.connection.commit()
