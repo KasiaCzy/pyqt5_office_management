@@ -33,6 +33,7 @@ class LoginWindow(QDialog):
         # buttons
         self.register_btn = QPushButton('New User')
         self.register_btn.setStyleSheet(style.register_btn_style())
+        self.register_btn.setAutoDefault(False)
         self.register_btn.clicked.connect(self.add_user)
 
         self.login_btn = QPushButton('Login')

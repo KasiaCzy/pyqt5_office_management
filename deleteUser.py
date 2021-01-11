@@ -39,9 +39,9 @@ class DeleteUserWindow(QWidget):
 
         self.submit_btn = QPushButton("Delete")
         self.submit_btn.setStyleSheet(style.delete_btn_style())
-        self.submit_btn.clicked.connect(self.delete_user)
+        self.submit_btn.clicked.connect(self.delete_users)
 
-        self.user_name = self.get_user_by_id()
+        self.user_name = self.get_logged_user()
         if self.user_name != 'admin' or self.users_selecte_box.currentIndex() == 0:
             self.submit_btn.setEnabled(False)
         self.users_selecte_box.currentIndexChanged.connect(self.set_button_availability)
@@ -73,7 +73,7 @@ class DeleteUserWindow(QWidget):
 
         self.setLayout(self.main_layout)
 
-    def delete_user(self):
+    def delete_users(self):
         mbox = QMessageBox.question(self, "Warning", "Are you sure to delete this user? "
                                                      "All assigned tasks, entries and events will be deleted too!",
                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -83,7 +83,7 @@ class DeleteUserWindow(QWidget):
             user_index = self.users_selecte_box.currentIndex()
             if self.users_selecte_box.currentText() != 'admin':
                 try:
-                    self.delete_users(user_id)
+                    self.delete_user(user_id)
                     self.delete_events(user_id)
                     self.delete_entries(user_id)
                     self.delete_tasks(user_id)
@@ -104,11 +104,11 @@ class DeleteUserWindow(QWidget):
     def get_users(self):
         return self.cursor.execute("SELECT * FROM users").fetchall()
 
-    def get_user_by_id(self):
+    def get_logged_user(self):
         user_query = self.cursor.execute(f"SELECT * FROM users WHERE id={self.logged_user_id}").fetchone()
         return user_query[UserData.NAME]
 
-    def delete_users(self, user_id):
+    def delete_user(self, user_id):
         query_user = "DELETE FROM users WHERE id=?"
         self.cursor.execute(query_user, (user_id,))
         self.connection.commit()
@@ -119,8 +119,8 @@ class DeleteUserWindow(QWidget):
         self.connection.commit()
 
     def delete_entries(self, user_id):
-        query_entrie = "DELETE FROM entries WHERE user_id=?"
-        self.cursor.execute(query_entrie, (user_id,))
+        query_entry = "DELETE FROM entries WHERE user_id=?"
+        self.cursor.execute(query_entry, (user_id,))
         self.connection.commit()
 
     def delete_tasks(self, user_id):

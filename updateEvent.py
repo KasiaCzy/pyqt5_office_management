@@ -86,6 +86,10 @@ class UpdateEventWindow(QWidget):
         except:
             QMessageBox.information(self, "Warning", "Event has not been updated.")
 
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return:
+            self.submit_update()
+
     def get_events(self, event_id):
         return self.cursor.execute(f"SELECT * FROM events WHERE id={event_id}").fetchone()
 

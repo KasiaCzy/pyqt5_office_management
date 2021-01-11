@@ -45,6 +45,7 @@ class AddTaskWindow(QWidget):
         self.status_box.addItems(['--Select--', 'to do', 'in progress', 'done', 'closed'])
 
         self.submit_btn = QPushButton("Submit")
+        self.submit_btn.setAutoDefault(True)
         self.submit_btn.setStyleSheet(style.btn_style())
         self.submit_btn.clicked.connect(self.submit_task)
 
@@ -73,6 +74,10 @@ class AddTaskWindow(QWidget):
         self.main_layout.addWidget(self.bottom_frame)
 
         self.setLayout(self.main_layout)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return:
+            self.submit_task()
 
     def submit_task(self):
         self.name = self.name_entry.text()
@@ -165,6 +170,10 @@ class ConfirmWindow(QWidget):
             self.close()
         except:
             QMessageBox.information(self, "Warning", "Task has not been added.")
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return:
+            self.confirm_task()
 
     def insert_task(self):
         query = "INSERT INTO 'tasks' (name,status,user_id) VALUES (?,?,?)"

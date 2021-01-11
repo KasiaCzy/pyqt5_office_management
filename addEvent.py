@@ -83,6 +83,10 @@ class AddEventWindow(QWidget):
         else:
             QMessageBox.information(self, "Warning", 'Field: "Event" can not be empty.')
 
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return:
+            self.add_event()
+
     def insert_event(self, name, note):
         query = "INSERT INTO 'events' (name,date,note,user_id) VALUES (?,?,?,?)"
         self.cursor.execute(query, (name, self.date, note, self.logged_user_id))

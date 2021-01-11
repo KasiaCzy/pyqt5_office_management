@@ -738,16 +738,12 @@ class MainWindow(QMainWindow):
             self.display_task_requested.emit()
 
     def activate_update_user_name_button(self):
-        if len(self.new_user_name.text()) > 0:
-            self.submit_user_name_btn.setEnabled(True)
-        else:
-            self.submit_user_name_btn.setEnabled(False)
+        self.submit_user_name_btn.setEnabled(len(self.new_user_name.text()) > 0)
+        self.submit_user_name_btn.setEnabled(len(self.new_user_name.text()) > 0)
 
     def activate_update_user_password_button(self):
-        if len(self.new_password.text()) > 0:
-            self.submit_password_btn.setEnabled(True)
-        else:
-            self.submit_password_btn.setEnabled(False)
+        self.submit_password_btn.setEnabled(len(self.new_password.text()) > 0)
+        self.submit_password_btn.setEnabled(len(self.new_password.text()) > 0)
 
     def update_username(self):
         users = self.get_users_name()
