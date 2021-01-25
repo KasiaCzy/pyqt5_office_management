@@ -1,5 +1,5 @@
 # Office Management - PyQt5 project
-> This simple GUI app helps organize and manage small office.
+> This simple GUI app helps organize and manage a small office.
 ## Table of contents
 * [Motivation](#motivation)
 * [Screenshots](#screenshots)
@@ -20,4 +20,4 @@ This project is created to keep learning GUI programming with PyQt5.
 ## Features
 * Add new tasks, assign them to team members and track their progress.
 * Manage tasks assigned to you to make your workday more productive.  
-* Add events to calendar.
+* Add events to the calendar.
